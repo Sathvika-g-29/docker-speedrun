@@ -1,21 +1,23 @@
-FROM python:3.11-slim
+# Stage 1 - Builder
+FROM python:3.11-slim AS builder
 
 WORKDIR /app
 
 COPY requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+# Stage 2 - Runtime
+FROM python:3.11-slim AS runtime
+
+WORKDIR /app
+
+# Copy only installed packages from builder
+COPY --from=builder /root/.local /root/.local
 
 COPY . .
 
-RUN mkdir -p /app/data
+ENV PATH=/root/.local/bin:$PATH
 
 EXPOSE 8501
 
 CMD ["streamlit", "run", "app.py", "--server.address=0.0.0.0"]
-# FROM python:3.11-slim	Downloaded a lightweight Python environment
-# WORKDIR /app	Created a folder called /app inside the container
-# COPY requirements.txt .	Copied your requirements file in
-# RUN pip install -r requirements.txt	Installed Streamlit inside the container
-# COPY . .	Copied your app.py in
-# EXPOSE 8501	Opened port 8501 (Streamlit's default)
-# CMD [...]	The command to run when container starts
